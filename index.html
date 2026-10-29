@@ -97,8 +97,6 @@ details.edit{border-top:1px solid var(--line);padding-top:12px}
 @media (max-width:480px){.ico{width:38px;height:38px}.tools{gap:6px}}
 @media (max-width:560px){.progress{top:58px}}
 details.edit .warn{color:#ffb38a}
-#ownerBar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:12px;max-width:calc(100vw - 32px);padding:8px 8px 8px 18px;border-radius:999px;background:rgba(26,19,32,.94);border:1px solid rgba(255,255,255,.16);color:#f6eee6;font:500 14px var(--body);box-shadow:0 8px 30px rgba(0,0,0,.35)}
-#ownerBar .pill{height:38px;padding:0 16px;font-size:14px;white-space:nowrap}
 details.edit summary{cursor:pointer;color:var(--soft);font-size:16px}
 details.edit[open]>summary{margin-bottom:12px}
 details.edit .row{margin-top:12px}
@@ -562,29 +560,6 @@ function cropReady(who){if(typeof frames==='undefined'||!frames[who])return setT
   ['pointerup','pointercancel','lostpointercapture'].forEach(t=>cv.addEventListener(t,()=>drag=null));
   cv.addEventListener('wheel',e=>{e.preventDefault();f.crop.z=Math.min(4,Math.max(1,f.crop.z*(e.deltaY<0?1.06:1/1.06)));z.value=f.crop.z;commit()},{passive:false});
 });
-/* hand the framed photos to Claude so they can be built into the page for everyone */
-function finalShot(w){const img=frames[w].getImg();if(!img)return null;const W=960,A=1050,c=document.createElement('canvas');c.width=W;c.height=A;const x=c.getContext('2d'),cr=frames[w].crop;
-  const s=Math.max(W/img.width,A/img.height)*cr.z,dw=img.width*s,dh=img.height*s;x.fillStyle='#efe7df';x.fillRect(0,0,W,A);x.imageSmoothingQuality='high';x.drawImage(img,-(dw-W)*cr.fx,-(dh-A)*cr.fy,dw,dh);return c.toDataURL('image/jpeg',.9)}
-if(EDIT){const cap=n=>typeof claude!=='undefined'&&claude.use?claude.use(n).catch(()=>null):Promise.resolve(null);
-  async function sendFinal(btn,say){const data={mom:finalShot('mom'),dad:finalShot('dad'),nameMom:customName('mom'),nameDad:customName('dad')};
-    if(!data.mom&&!data.dad)return say('sendNone');
-    const json=JSON.stringify(data);let why='';btn.disabled=true;say('sendBusy');
-    try{
-      const a=await cap('assets');
-      if(a){try{await a.upload(new Blob([json],{type:'application/json'}),{type:'application/json'});return say('sendDone')}catch(e){why=(e&&e.code)||'error'}}
-      const d=await cap('downloads');
-      if(d){try{await d.save({filename:'fotos-ofrenda.json',data:json});return say('sendSaved')}catch(e){return say('sendFail',(why?why+' · ':'')+((e&&e.code)||'error'))}}
-      const u=URL.createObjectURL(new Blob([json],{type:'application/json'})),l=document.createElement('a');l.href=u;l.download='fotos-ofrenda.json';document.body.appendChild(l);l.click();l.remove();say('sendSaved');
-    }finally{btn.disabled=false}}
-  const pBtn=document.getElementById('sendFinal'),note=document.getElementById('sendNote');
-  pBtn.onclick=()=>sendFinal(pBtn,(k,x)=>{note.hidden=false;note.textContent=UI[LANG][k]+(x?' ('+x+')':'')});
-  // only the altar's keeper (who can edit this page) sees this bar; visitors never do
-  cap('assets').then(a=>{if(!a)return;const bar=document.createElement('div');bar.id='ownerBar';
-    bar.innerHTML='<span></span><button type="button" class="pill"></button>';document.body.appendChild(bar);
-    const t=bar.querySelector('span'),b=bar.querySelector('button'),label=()=>{t.textContent=UI[LANG].ownerOnly;b.textContent=UI[LANG].sendFinal};label();
-    document.getElementById('langBtn').addEventListener('click',()=>setTimeout(label,0));
-    b.onclick=()=>sendFinal(b,(k,x)=>{t.textContent=UI[LANG][k]+(x?' ('+x+')':'');if(k==='sendDone')b.hidden=true})});
-}
 
 CUR_TAG=null;
 /* ---------- shader flames ---------- */
